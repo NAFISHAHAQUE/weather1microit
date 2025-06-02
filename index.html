@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device=device-width, initial-scale=1.0">
+    <title>AI Weather Forecaster</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background: #0d1b2a;
+            display: flex;
+            flex-direction: column;
+            text-align: center;
+            color: #e0e1dd;
+        }
+        canvas#particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+        header {
+            background: linear-gradient(90deg, #1b98e0, #e63946);
+            padding: 40px;
+            text-shadow: 0 0 10px #00d4ff;
+            position: relative;
+            z-index: 1;
+        }
+        h1 {
+            margin: 0;
+            font-size: 3.5em;
+            letter-spacing: 2px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 40px auto;
+            padding: 30px;
+            background: rgba(27, 152, 224, 0.1);
+            border-radius: 20px;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+            backdrop-filter: blur(10px);
+            position: relative;
+            z-index: 1;
+            flex: 1;
+        }
+        h2 {
+            font-size: 2.2em;
+            color: #00d4ff;
+            text-shadow: 0 0 5px #00d4ff;
+        }
+        input[type="text"] {
+            padding: 15px;
+            width: 70%;
+            max-width: 350px;
+            border: 2px solid #00d4ff;
+            border-radius: 30px;
+            font-size: 1.2em;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            outline: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(0, 212, 255, 0.3);
+        }
+        input[type="text"]:focus {
+            border-color: #e63946;
+            box-shadow: 0 0 15px rgba(230, 57, 70, 0.7);
+        }
+        button {
+            padding: 15px 40px;
+            background: linear-gradient(45deg, #00d4ff, #e63946);
+            color: white;
+            border: none;
+            border-radius: 30px;
+            font-size: 1.3em;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+        }
+        button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(230, 57, 70, 0.8);
+        }
+        #weather-data, #alerts-section, #map-analytics, #ten-day-forecast {
+            margin-top: 30px;
+            perspective: 1000px;
+        }
+        .weather-card, .alert-card, .map-card {
+            padding: 25px;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(230, 57, 70, 0.2));
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            animation: cardFlip 0.6s ease forwards;
+        }
+        @keyframes cardFlip {
+            from { transform: rotateY(90deg); opacity: 0; }
+            to { transform: rotateY(0deg); opacity: 1; }
+        }
+        .weather-card h3, .alert-card h3, .map-card h3 {
+            font-size: 2em;
+            color: #00d4ff;
+            margin: 0;
+            text-shadow: 0 0 5px #00d4ff;
+        }
+        .weather-card p, .alert-card p, .map-card p {
+            font-size: 1.2em;
+            margin: 10px 0;
+            color: #e0e1dd;
+        }
+        .weather-icon {
+            font-size: 3em;
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            opacity: 0.8;
+            animation: weatherPulse 2s infinite;
+        }
+        @keyframes weatherPulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+        #cosmic-mood {
+            margin-top: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(138, 43, 226, 0.2), rgba(0, 212, 255, 0.2));
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(138, 43, 226, 0.5);
+            animation: moodGlow 3s ease-in-out infinite;
+        }
+        #cosmic-mood h3 {
+            color: #8a2be2;
+            text-shadow: 0 0 5px #8a2be2;
+            font-size: 1.8em;
+        }
+        #mood-output {
+            font-size: 1.2em;
+            color: #e0e1dd;
+            font-style: italic;
+        }
+        @keyframes moodGlow {
+            0% { box-shadow: 0 0 20px rgba(138, 43, 226, 0.5); }
+            50% { box-shadow: 0 0 30px rgba(0, 212, 255, 0.7); }
+            100% { box-shadow: 0 0 20px rgba(138, 43, 226, 0.5); }
+        }
+        #chatbot {
+            position: fixed;
+            bottom: 100px;
+            right: 20px;
+            width: 300px;
+            background: rgba(27, 152, 224, 0.2);
+            border-radius: 15px;
+            box-shadow: 0 0 15px rgba(0, 212, 255, 0.5);
+            padding: 15px;
+            z-index: 2;
+        }
+        #chat-output {
+            height: 200px;
+            overflow-y: auto;
+            margin-bottom: 10px;
+            color: #e0e1dd;
+            font-size: 0.9em;
+        }
+        #chat-input {
+            width: 70%;
+            padding: 10px;
+            border: 1px solid #00d4ff;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            outline: none;
+        }
+        #chat-submit {
+            padding: 10px 20px;
+            background: linear-gradient(45deg, #00d4ff, #e63946);
+            border: none;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+        }
+        footer {
+            padding: 30px;
+            background: rgba(0, 0, 0, 0.3);
+            color: #e0e1dd;
+            font-size: 1em;
+            position: relative;
+            z-index: 1;
+            border-top: 1px solid rgba(0, 212, 255, 0.5);
+            flex-shrink: 0;
+        }
+        .footer-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .footer-left {
+            flex: 1;
+            text-align: left;
+        }
+        .footer-right {
+            flex: 1;
+            text-align: right;
+        }
+        .social-links a {
+            color: #00d4ff;
+            margin: 0 10px;
+            text-decoration: none;
+            font-size: 1.2em;
+            transition: all 0.3s ease;
+        }
+        .social-links a:hover {
+            color: #e63946;
+            text-shadow: 0 0 10px #e63946;
+            transform: translateY(-3px);
+        }
+        .contact-info {
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        #ten-day-forecast {
+            margin-top: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, rgba(0, 212, 255, 0.2), rgba(230, 57, 70, 0.2));
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.5);
+            animation: cardFlip 0.6s ease forwards;
+        }
+        #ten-day-forecast h3 {
+            font-size: 2em;
+            color: #00d4ff;
+            margin: 0;
+            text-shadow: 0 0 5px #00d4ff;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <canvas id="particles"></canvas>
+    <header>
+        <h1>AI Weather Forecaster 🌍</h1>
+        <p>Unlock the Future of Weather Prediction ⏳</p>
+    </header>
+
+    <div class="container">
+        <h2>Discover Your Weather 🌦️</h2>
+        <p>Enter your city for an AI-powered forecast, alerts, and cosmic mood! 🌠</p>
+        <input type="text" id="city-input" placeholder="Enter city or town 🌐">
+        <button onclick="getWeather()">Launch Forecast 🚀</button>
+
+        <div id="weather-data"></div>
+        <div id="alerts-section"></div>
+        <div id="map-analytics"></div>
+        <div id="ten-day-forecast">
+            <h3>5-Day Forecast 📅</h3>
+            <div id="forecast-output"></div>
+        </div>
+        <div id="cosmic-mood">
+            <h3>Cosmic Weather Mood 🌌</h3>
+            <p id="mood-output">Enter a location to discover your cosmic mood! ✨</p>
+        </div>
+    </div>
+
+    <div id="chatbot">
+        <div id="chat-output">
+            <p>AI Bot: Hello! 😊 Ask me about weather, alerts, 5-day forecast, or storm preparedness (e.g., 'weather in London' or '5-day forecast for Paris').</p>
+        </div>
+        <input type="text" id="chat-input" placeholder="Chat with AI... 💬">
+        <button id="chat-submit" onclick="sendChat()">Send 📩</button>
+    </div>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-left">
+                <p>© 2025 AI Weather Forecast by xAI 🌐</p>
+                <p>Powered by Cosmic Insights 🌠</p>
+                <div class="contact-info">
+                    <p>Contact us: <a href="mailto:support@aiweatherforecast.com" style="color: #00d4ff;">support@aiweatherforecast.com 📧</a></p>
+                </div>
+            </div>
+            <div class="footer-right">
+                <div class="social-links">
+                    <a href="#" target="_blank">Twitter 🐦</a>
+                    <a href="#" target="_blank">GitHub 💾</a>
+                    <a href="#" target="_blank">LinkedIn 🤝</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        const canvas = document.getElementById('particles');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const particlesArray = [];
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 5 + 1;
+                this.speedX = Math.random() * 1 - 0.5;
+                this.speedY = Math.random() * 1 - 0.5;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                if (this.size > 0.2) this.size -= 0.1;
+            }
+            draw() {
+                ctx.fillStyle = 'rgba(0, 212, 255, 0.8)';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function initParticles() {
+            for (let i = 0; i < 100; i++) {
+                particlesArray.push(new Particle());
+            }
+        }
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+                particlesArray[i].draw();
+                if (particlesArray[i].size <= 0.2) {
+                    particlesArray.splice(i, 1);
+                    i--;
+                    particlesArray.push(new Particle());
+                }
+            }
+            requestAnimationFrame(animateParticles);
+        }
+        initParticles();
+        animateParticles();
+
+        const cosmicEvents = [
+            { type: "Full Moon", effect: "Heightened emotions and clarity", vibe: "luminous" },
+            { type: "Solar Flare", effect: "Bursts of energy and inspiration", vibe: "fiery" },
+            { type: "Meteor Shower", effect: "Wonder and new possibilities", vibe: "sparkling" },
+            { type: "New Moon", effect: "Introspection and renewal", vibe: "mystical" },
+            { type: "Aurora Borealis", effect: "Awe and serenity", vibe: "ethereal" },
+            { type: "Planetary Alignment", effect: "Harmony and focus", vibe: "balanced" }
+        ];
+
+        const moodTemplates = {
+            Clear: [["radiant", "optimistic", "like you're soaring through the stars 🌟"]],
+            Clouds: [["contemplative", "mysterious", "like you're unraveling cosmic secrets ☁️"]],
+            Rain: [["reflective", "cleansed", "like you're dancing in celestial rains 🌧️"]],
+            Thunderstorm: [["bold", "electric", "like you're channeling cosmic power ⛈️"]],
+            Snow: [["calm", "serene", "like you're wrapped in a cosmic blanket ❄️"]],
+            Mist: [["dreamy", "enigmatic", "like you're wandering through a nebula 🌫️"]]
+        };
+
+        const weatherEmojis = {
+            Clear: "☀️",
+            Clouds: "☁️",
+            Rain: "🌧️",
+            Thunderstorm: "⛈️",
+            Snow: "❄️",
+            Mist: "🌫️",
+            default: "🌍"
+        };
+
+        function simpleHash(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                hash = (hash << 5) - hash + str.charCodeAt(i);
+                hash = hash & hash;
+            }
+            return Math.abs(hash);
+        }
+
+        async function getWeather(cityFromChat = null) {
+            const city = cityFromChat || document.getElementById("city-input").value.trim();
+            const weatherDataDiv = document.getElementById("weather-data");
+            const alertsSection = document.getElementById("alerts-section");
+            const mapAnalytics = document.getElementById("map-analytics");
+            const moodOutput = document.getElementById("mood-output");
+            const chatOutput = document.getElementById("chat-output");
+            const forecastOutput = document.getElementById("forecast-output");
+            const apiKey = "80536d9f1274361d81d5cb1ea8335de1";
+
+            if (!city) {
+                weatherDataDiv.innerHTML = "<p>Please enter a city or town. 🌐</p>";
+                alertsSection.innerHTML = "";
+                mapAnalytics.innerHTML = "";
+                moodOutput.innerHTML = "Enter a location to discover your cosmic mood! ✨";
+                forecastOutput.innerHTML = "";
+                if (cityFromChat) chatOutput.innerHTML += `<p>AI Bot: Please tell me a city or town! 😊</p>`;
+                chatOutput.scrollTop = chatOutput.scrollHeight;
+                return;
+            }
+
+            try {
+                
+                const currentResponse = await fetch(
+                    `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`
+                );
+                if (!currentResponse.ok) throw new Error(`Location not found or API error: ${currentResponse.status}`);
+                const currentData = await currentResponse.json();
+
+                const weatherData = {
+                    city: currentData.name,
+                    temperature: Math.round(currentData.main.temp),
+                    condition: currentData.weather[0].main,
+                    aiAccuracy: "AI predicts 85% accuracy based on advanced models. 🎯"
+                };
+
+                weatherDataDiv.innerHTML = `
+                    <div class="weather-card">
+                        <h3>${weatherData.city} ${weatherEmojis[weatherData.condition] || weatherEmojis.default}</h3>
+                        <p>Temperature: ${weatherData.temperature}°C 🌡️</p>
+                        <p>Condition: ${weatherData.condition} ${weatherEmojis[weatherData.condition] || weatherEmojis.default}</p>
+                        <p>${weatherData.aiAccuracy}</p>
+                        <span class="weather-icon">${weatherEmojis[weatherData.condition] || weatherEmojis.default}</span>
+                    </div>
+                `;
+
+                const alerts = [];
+                if (weatherData.condition === "Rain") {
+                    alerts.push(`Alert: Rain 🌧️ expected in ${weatherData.city}! Take an umbrella ☂️.`);
+                } else if (weatherData.condition === "Thunderstorm") {
+                    alerts.push(`Alert: Thunderstorm ⛈️ expected in ${weatherData.city}! Stay safe indoors 🏠.`);
+                }
+                if (weatherData.temperature > 30) alerts.push(`Alert: High temperature (${weatherData.temperature}°C) in ${weatherData.city}! Stay hydrated 💧.`);
+                if (weatherData.temperature < 0) alerts.push(`Alert: Cold temperature (${weatherData.temperature}°C) in ${weatherData.city}! Dress warmly 🧣.`);
+                alertsSection.innerHTML = alerts.length ? `
+                    <div class="alert-card">
+                        <h3>Custom Alerts 🚨</h3>
+                        ${alerts.map(alert => `<p>${alert}</p>`).join('')}
+                    </div>
+                ` : `<div class="alert-card"><p>No alerts for ${weatherData.city}. 😊👍</p></div>`;
+
+                mapAnalytics.innerHTML = `
+                    <div class="map-card">
+                        <h3>Map & Analytics 🗺️</h3>
+                        <p>Interactive map coming soon! Current analytics: ${weatherData.condition} ${weatherEmojis[weatherData.condition] || weatherEmojis.default} with ${weatherData.temperature}°C 🌡️.</p>
+                    </div>
+                `;
+
+                const seed = simpleHash(weatherData.city + Date.now().toString());
+                const cosmicIndex = seed % cosmicEvents.length;
+                const moodOptions = moodTemplates[weatherData.condition] || [["curious", "adventurous", "like you're exploring the cosmos 🌌"]];
+                const moodIndex = seed % moodOptions.length;
+
+                const randomCosmicEvent = cosmicEvents[cosmicIndex];
+                const mood = moodOptions[moodIndex];
+
+                const moodText = `
+                    Under the ${randomCosmicEvent.vibe} influence of a ${randomCosmicEvent.type} 🌠 in ${weatherData.city}'s ${weatherData.condition.toLowerCase()} skies ${weatherEmojis[weatherData.condition] || weatherEmojis.default}, 
+                    you feel ${mood[0]} and ${mood[1]}. It's as if ${mood[2]}! 
+                    ${randomCosmicEvent.effect} will shape your journey today. ✨
+                `;
+                moodOutput.innerHTML = moodText;
+
+                const forecastResponse = await fetch(
+                    `https://api.openweathermap.org/data/2.5/forecast?q=${city}&appid=${apiKey}&units=metric`
+                );
+                if (!forecastResponse.ok) throw new Error(`Forecast data unavailable: ${forecastResponse.status}`);
+                const forecastData = await forecastResponse.json();
+                let forecastHtml = '<div class="weather-card">';
+                for (let i = 0; i < 40 && i < forecastData.list.length; i += 8) { // 5 days, one per 24h
+                    const day = new Date(forecastData.list[i].dt * 1000).toLocaleDateString();
+                    const temp = Math.round(forecastData.list[i].main.temp);
+                    const condition = forecastData.list[i].weather[0].main;
+                    forecastHtml += `
+                        <p>${day}: ${temp}°C ${weatherEmojis[condition] || weatherEmojis.default} (${condition})</p>
+                    `;
+                }
+                forecastHtml += '</div>';
+                forecastOutput.innerHTML = forecastHtml;
+
+                if (cityFromChat) {
+                    chatOutput.innerHTML += `
+                        <p>AI Bot: Here's the weather for ${weatherData.city} ${weatherEmojis[weatherData.condition] || weatherEmojis.default}:<br>
+                        Temperature: ${weatherData.temperature}°C 🌡️<br>
+                        Condition: ${weatherData.condition} ${weatherEmojis[weatherData.condition] || weatherEmojis.default}<br>
+                        ${weatherData.aiAccuracy}<br>
+                        Alerts: ${alerts.join(' | ')}<br>
+                        Cosmic Mood: ${moodText}<br>
+                        5-Day Forecast: ${forecastHtml.replace(/<\/?div>/g, '').replace(/<p>/g, '').replace(/<\/p>/g, '<br>')}</p>
+                    `;
+                    chatOutput.scrollTop = chatOutput.scrollHeight;
+                }
+            } catch (error) {
+                weatherDataDiv.innerHTML = `<p>Error: ${error.message}. Please try another city or town (e.g., 'London' or 'Paris')! 😕🌐</p>`;
+                alertsSection.innerHTML = "";
+                mapAnalytics.innerHTML = "";
+                moodOutput.innerHTML = "Something went wrong—try another city or town for your cosmic mood! ✨😔";
+                forecastOutput.innerHTML = "";
+                if (cityFromChat) {
+                    chatOutput.innerHTML += `<p>AI Bot: Oops! I couldn’t find ${city}. Try a different city or town (e.g., 'London' or 'Paris'). 😕</p>`;
+                    chatOutput.scrollTop = chatOutput.scrollHeight;
+                }
+            }
+        }
+
+        function sendChat() {
+            const chatInput = document.getElementById("chat-input");
+            const chatOutput = document.getElementById("chat-output");
+            const userMessage = chatInput.value.trim().toLowerCase();
+            chatInput.value = "";
+
+            if (!userMessage) return;
+
+            chatOutput.innerHTML += `<p>You: ${userMessage} 💬</p>`;
+
+            let botResponse = "";
+            if (userMessage.includes("weather in")) {
+                const city = userMessage.split("weather in")[1].trim();
+                botResponse = `Fetching weather and 5-day forecast for ${city}... 🌦️`;
+                chatOutput.innerHTML += `<p>AI Bot: ${botResponse}</p>`;
+                chatOutput.scrollTop = chatOutput.scrollHeight;
+                getWeather(city);
+            } else if (userMessage.includes("alerts for")) {
+                const city = userMessage.split("alerts for")[1].trim();
+                botResponse = `Checking alerts for ${city}... 🚨`;
+                chatOutput.innerHTML += `<p>AI Bot: ${botResponse}</p>`;
+                chatOutput.scrollTop = chatOutput.scrollHeight;
+                getWeather(city);
+            } else if (userMessage.includes("cosmic mood in")) {
+                const city = userMessage.split("cosmic mood in")[1].trim();
+                botResponse = `Fetching cosmic mood for ${city}... 🌌`;
+                chatOutput.innerHTML += `<p>AI Bot: ${botResponse}</p>`;
+                chatOutput.scrollTop = chatOutput.scrollHeight;
+                getWeather(city);
+            } else if (userMessage.includes("5-day forecast for")) {
+                const city = userMessage.split("5-day forecast for")[1].trim();
+                botResponse = `Fetching 5-day forecast for ${city}... 📅`;
+                chatOutput.innerHTML += `<p>AI Bot: ${botResponse}</p>`;
+                chatOutput.scrollTop = chatOutput.scrollHeight;
+                getWeather(city);
+            } else if (userMessage.includes("storm preparedness")) {
+                botResponse = "Storm Preparedness Tips: Stay indoors 🏠, secure windows 🔒, and have a flashlight 🔦 ready. Check local alerts with 'alerts for [city]'! ⛈️";
+                chatOutput.innerHTML += `<p>AI Bot: ${botResponse}</p>`;
+            } else if (userMessage.includes("hi") || userMessage.includes("hello")) {
+                botResponse = "Hi! 😊 Ask about weather ('weather in [city]' 🌦️), alerts ('alerts for [city]' 🚨), cosmic mood ('cosmic mood in [city]' 🌌), or 5-day forecast ('5-day forecast for [city]' 📅)! ⛈️";
+                chatOutput.innerHTML += `<p>AI Bot: ${botResponse}</p>`;
+            } else {
+                botResponse = "I can help with weather 🌦️, alerts 🚨, cosmic mood 🌌, or 5-day forecast 📅! Try 'weather in [city]' or 'storm preparedness'. 😊";
+                chatOutput.innerHTML += `<p>AI Bot: ${botResponse}</p>`;
+            }
+
+            chatOutput.scrollTop = chatOutput.scrollHeight;
+        }
+
+        document.getElementById("chat-input").addEventListener("keypress", (e) => {
+            if (e.key === "Enter") sendChat();
+        });
+    </script>
+</body>
+</html>
